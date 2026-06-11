@@ -4,6 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"myapp/internal/products"
 	"myapp/internal/reports"
 	"myapp/internal/suppliers"
+	"myapp/internal/swagger"
 	"myapp/internal/warehouses"
 	"myapp/internal/websocket"
 	"net/http"
@@ -21,6 +23,9 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+//go:embed docs/openapi.yaml
+var openAPISpec []byte
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -74,7 +79,10 @@ func main() {
 		})
 	})
 
+	swagger.Register(openAPISpec)
+
 	log.Println("🚀 Inventory Management System API started on :3000")
+	log.Println("📖 Swagger UI: http://localhost:3000/swagger/")
 	log.Println("📦 Total APIs: 25")
 	log.Println("🔌 WebSocket endpoints:")
 	log.Println("   - ws://localhost:3000/ws/inventory")
