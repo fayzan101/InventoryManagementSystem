@@ -144,6 +144,7 @@ func ReceivePurchaseOrder(w http.ResponseWriter, r *http.Request) {
 }
 func CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var req struct {
+		CustomerID    *uint  `json:"customer_id"`
 		CustomerName  string `json:"customer_name"`
 		CustomerEmail string `json:"customer_email"`
 		Items         []struct {
@@ -182,11 +183,25 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	order := internal.Order{
 		OrderNumber:   orderNumber,
+		CustomerID:    req.CustomerID,
 		CustomerName:  req.CustomerName,
 		CustomerEmail: req.CustomerEmail,
 		Status:        "pending",
 		TotalAmount:   total,
 		OrderDate:     time.Now(),
+	}
+
+	if req.CustomerID != nil {
+		var customer internal.Customer
+		if err := internal.DB.First(&customer, *req.CustomerID).Error; err != nil {
+			http.Error(w, "Customer not found", http.StatusNotFound)
+			return
+		}
+		order.CustomerName = customer.Name
+		order.CustomerEmail = customer.Email
+	} else if req.CustomerName == "" {
+		http.Error(w, "customer_name or customer_id is required", http.StatusBadRequest)
+		return
 	}
 
 	if err := internal.DB.Create(&order).Error; err != nil {
@@ -251,6 +266,26 @@ func ListOrders(w http.ResponseWriter, r *http.Request) {
 		"data":   orders,
 	})
 }
+func GetOrder(w http.ResponseWriter, r *http.Request) {
+	id := extractID(r.URL.Path, "/orders/")
+	if id == 0 {
+		http.Error(w, "Invalid order ID", http.StatusBadRequest)
+		return
+	}
+
+	var order internal.Order
+	if err := internal.DB.Preload("Items.Product").Preload("Customer").First(&order, id).Error; err != nil {
+		http.Error(w, "Order not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data":   order,
+	})
+}
+
 func UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 	id := extractID(r.URL.Path, "/orders/")
 	if id == 0 {

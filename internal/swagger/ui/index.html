@@ -25,6 +25,10 @@
         layout: "StandaloneLayout",
         tryItOutEnabled: true,
         persistAuthorization: true,
+        requestInterceptor: function (req) {
+          req.headers["Accept"] = "application/json";
+          return req;
+        },
       });
     };
   </script>
