@@ -32,14 +32,7 @@ func main() {
 		log.Println("No .env file found, using environment variables.")
 	}
 
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	name := os.Getenv("DB_NAME")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, name)
-	internal.InitDB(connStr)
+	internal.InitDB(dbConnString())
 
 	// Initialize WebSocket hub for real-time updates
 	websocket.InitHub()
@@ -81,17 +74,46 @@ func main() {
 
 	swagger.Register(openAPISpec)
 
-	log.Println("🚀 Inventory Management System API started on :3000")
-	log.Println("📖 Swagger UI: http://localhost:3000/swagger/")
+	serverPort := os.Getenv("PORT")
+	if serverPort == "" {
+		serverPort = os.Getenv("APP_PORT")
+	}
+	if serverPort == "" {
+		serverPort = "3000"
+	}
+
+	log.Printf("🚀 Inventory Management System API started on :%s", serverPort)
+	log.Printf("📖 Swagger UI: http://localhost:%s/swagger/", serverPort)
 	log.Println("📦 Total APIs: 25")
-	log.Println("🔌 WebSocket endpoints:")
-	log.Println("   - ws://localhost:3000/ws/inventory")
-	log.Println("   - ws://localhost:3000/ws/warehouses")
-	log.Println("   - ws://localhost:3000/ws/products")
-	log.Println("   - ws://localhost:3000/ws/suppliers")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	log.Printf("🔌 WebSocket endpoints:")
+	log.Printf("   - ws://localhost:%s/ws/inventory", serverPort)
+	log.Printf("   - ws://localhost:%s/ws/warehouses", serverPort)
+	log.Printf("   - ws://localhost:%s/ws/products", serverPort)
+	log.Printf("   - ws://localhost:%s/ws/suppliers", serverPort)
+	if err := http.ListenAndServe(":"+serverPort, nil); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func dbConnString() string {
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		return url
+	}
+
+	sslmode := os.Getenv("DB_SSLMODE")
+	if sslmode == "" {
+		sslmode = "disable"
+	}
+
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		sslmode,
+	)
 }
 
 func handleProducts(w http.ResponseWriter, r *http.Request) {
