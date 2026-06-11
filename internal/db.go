@@ -18,15 +18,20 @@ func InitDB(connStr string) {
 	}
 	log.Println("Connected to PostgreSQL database with GORM.")
 	if err := DB.AutoMigrate(
+		&Category{},
 		&Product{},
 		&Warehouse{},
 		&Inventory{},
 		&StockMovement{},
 		&Supplier{},
+		&Customer{},
 		&PurchaseOrder{},
 		&POItem{},
 		&Order{},
 		&OrderItem{},
+		&StockTransfer{},
+		&StockTransferItem{},
+		&Employee{},
 		&AuditLog{},
 	); err != nil {
 		log.Fatalf("Auto-migration failed: %v", err)

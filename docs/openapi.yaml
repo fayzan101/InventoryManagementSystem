@@ -12,13 +12,15 @@ info:
     - `ws://localhost:3000/ws/products`
     - `ws://localhost:3000/ws/warehouses`
     - `ws://localhost:3000/ws/suppliers`
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: IMS API Support
 
 servers:
+  - url: /
+    description: Current host (use for Swagger Try it out)
   - url: http://localhost:3000
-    description: Local development server
+    description: Local development
 
 tags:
   - name: Health
@@ -37,6 +39,14 @@ tags:
     description: Sales order management
   - name: Reports
     description: Reports and audit trail
+  - name: Customers
+    description: Customer management
+  - name: Categories
+    description: Product category management
+  - name: Employees
+    description: Staff and warehouse assignments
+  - name: Transfers
+    description: Inter-warehouse stock transfers
 
 paths:
   /health:
@@ -640,6 +650,323 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    get:
+      tags: [Sales Orders]
+      summary: Get order by ID
+      operationId: getOrder
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /customers:
+    get:
+      tags: [Customers]
+      summary: List customers
+      operationId: listCustomers
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: company
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Customer list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListResponse"
+    post:
+      tags: [Customers]
+      summary: Create customer
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+
+  /customers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/CustomerId"
+    get:
+      tags: [Customers]
+      summary: Get customer by ID
+      operationId: getCustomer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+    put:
+      tags: [Customers]
+      summary: Update customer
+      operationId: updateCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+    delete:
+      tags: [Customers]
+      summary: Delete customer
+      operationId: deleteCustomer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: List categories
+      operationId: listCategories
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryListResponse"
+    post:
+      tags: [Categories]
+      summary: Create category
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+
+  /categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/CategoryId"
+    get:
+      tags: [Categories]
+      summary: Get category
+      operationId: getCategory
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+    put:
+      tags: [Categories]
+      summary: Update category
+      operationId: updateCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+    delete:
+      tags: [Categories]
+      summary: Delete category
+      operationId: deleteCategory
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /employees:
+    get:
+      tags: [Employees]
+      summary: List employees
+      operationId: listEmployees
+      parameters:
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+        - name: active
+          in: query
+          schema: { type: string, enum: [true] }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeListResponse"
+    post:
+      tags: [Employees]
+      summary: Create employee
+      operationId: createEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeResponse"
+
+  /employees/{id}:
+    parameters:
+      - $ref: "#/components/parameters/EmployeeId"
+    get:
+      tags: [Employees]
+      summary: Get employee
+      operationId: getEmployee
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeResponse"
+    put:
+      tags: [Employees]
+      summary: Update employee
+      operationId: updateEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeResponse"
+    delete:
+      tags: [Employees]
+      summary: Delete employee
+      operationId: deleteEmployee
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /transfers:
+    get:
+      tags: [Transfers]
+      summary: List stock transfers
+      operationId: listTransfers
+      parameters:
+        - $ref: "#/components/parameters/StatusQuery"
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferListResponse"
+    post:
+      tags: [Transfers]
+      summary: Create stock transfer
+      description: Moves stock between warehouses atomically.
+      operationId: createTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferRequest"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+
+  /transfers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/TransferId"
+    get:
+      tags: [Transfers]
+      summary: Get transfer by ID
+      operationId: getTransfer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+
+  /reports/sales-summary:
+    get:
+      tags: [Reports]
+      summary: Sales summary report
+      operationId: getSalesSummary
+      responses:
+        "200":
+          description: Revenue and order counts by status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesSummaryResponse"
+
+  /reports/top-products:
+    get:
+      tags: [Reports]
+      summary: Top selling products
+      operationId: getTopProducts
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: string, default: "10" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopProductsResponse"
+
   /audit-logs:
     get:
       tags: [Reports]
@@ -698,6 +1025,34 @@ components:
         type: integer
         format: uint
     OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    CustomerId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    CategoryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    EmployeeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    TransferId:
       name: id
       in: path
       required: true
@@ -1306,8 +1661,12 @@ components:
 
     CreateOrderRequest:
       type: object
-      required: [customer_name, items]
+      required: [items]
       properties:
+        customer_id:
+          type: integer
+          format: uint
+          description: Link to existing customer (alternative to customer_name)
         customer_name:
           type: string
         customer_email:
@@ -1424,3 +1783,190 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditLog"
+
+    Customer:
+      type: object
+      properties:
+        id: { type: integer, format: uint }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        company: { type: string }
+        address: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateCustomerRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        company: { type: string }
+        address: { type: string }
+
+    CustomerResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data: { $ref: "#/components/schemas/Customer" }
+
+    CustomerListResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Customer" }
+
+    Category:
+      type: object
+      properties:
+        id: { type: integer, format: uint }
+        name: { type: string }
+        description: { type: string }
+        parent_id: { type: integer, format: uint, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        parent_id: { type: integer, format: uint }
+
+    CategoryResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data: { $ref: "#/components/schemas/Category" }
+
+    CategoryListResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+
+    Employee:
+      type: object
+      properties:
+        id: { type: integer, format: uint }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [admin, manager, staff] }
+        phone: { type: string }
+        warehouse_id: { type: integer, format: uint, nullable: true }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateEmployeeRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        phone: { type: string }
+        warehouse_id: { type: integer, format: uint }
+        is_active: { type: boolean }
+
+    EmployeeResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data: { $ref: "#/components/schemas/Employee" }
+
+    EmployeeListResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Employee" }
+
+    StockTransfer:
+      type: object
+      properties:
+        id: { type: integer, format: uint }
+        transfer_number: { type: string }
+        from_warehouse_id: { type: integer, format: uint }
+        to_warehouse_id: { type: integer, format: uint }
+        status: { type: string }
+        notes: { type: string }
+        created_by: { type: string }
+        completed_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    CreateTransferRequest:
+      type: object
+      required: [from_warehouse_id, to_warehouse_id, items]
+      properties:
+        from_warehouse_id: { type: integer, format: uint }
+        to_warehouse_id: { type: integer, format: uint }
+        notes: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, quantity]
+            properties:
+              product_id: { type: integer, format: uint }
+              quantity: { type: integer }
+
+    TransferResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data: { $ref: "#/components/schemas/StockTransfer" }
+
+    TransferListResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/StockTransfer" }
+
+    SalesSummaryResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: object
+          properties:
+            by_status:
+              type: array
+              items:
+                type: object
+                properties:
+                  status: { type: string }
+                  count: { type: integer }
+                  total: { type: number }
+            overall:
+              type: object
+              properties:
+                total_orders: { type: integer }
+                total_revenue: { type: number }
+                average_order: { type: number }
+
+    TopProductsResponse:
+      type: object
+      properties:
+        status: { type: string, example: success }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id: { type: integer }
+              product_name: { type: string }
+              sku: { type: string }
+              units_sold: { type: integer }
+              revenue: { type: number }
