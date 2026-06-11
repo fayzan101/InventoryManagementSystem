@@ -1,0 +1,1426 @@
+openapi: 3.0.3
+info:
+  title: Inventory Management System API
+  description: |
+    REST API for the Inventory Management System (IMS).
+
+    Features include product catalog, multi-warehouse inventory, suppliers,
+    purchase orders, sales orders, stock movements, reports, and audit logs.
+
+    Real-time WebSocket endpoints (not part of this REST spec):
+    - `ws://localhost:3000/ws/inventory`
+    - `ws://localhost:3000/ws/products`
+    - `ws://localhost:3000/ws/warehouses`
+    - `ws://localhost:3000/ws/suppliers`
+  version: 1.0.0
+  contact:
+    name: IMS API Support
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Service health check
+  - name: Products
+    description: Product catalog management
+  - name: Warehouses
+    description: Warehouse management
+  - name: Inventory
+    description: Stock levels and movements
+  - name: Suppliers
+    description: Supplier management
+  - name: Purchase Orders
+    description: Purchase order processing
+  - name: Sales Orders
+    description: Sales order management
+  - name: Reports
+    description: Reports and audit trail
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns API status and version information.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      description: Returns all products, optionally filtered by category.
+      operationId: listProducts
+      parameters:
+        - $ref: "#/components/parameters/CategoryQuery"
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Products]
+      summary: Create product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+            example:
+              name: Widget Pro
+              sku: WGT-PRO-001
+              description: Premium widget
+              category: Electronics
+              price: 299.99
+              cost: 150.00
+              unit: piece
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/search:
+    get:
+      tags: [Products]
+      summary: Search products
+      description: Search products by name, SKU, or description.
+      operationId: searchProducts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search keyword
+          schema:
+            type: string
+          example: widget
+      responses:
+        "200":
+          description: Matching products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ProductId"
+    get:
+      tags: [Products]
+      summary: Get product by ID
+      operationId: getProduct
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Products]
+      summary: Update product
+      operationId: updateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Products]
+      summary: Delete product
+      operationId: deleteProduct
+      responses:
+        "200":
+          description: Product deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /warehouses:
+    get:
+      tags: [Warehouses]
+      summary: List warehouses
+      operationId: listWarehouses
+      responses:
+        "200":
+          description: List of warehouses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Warehouses]
+      summary: Create warehouse
+      operationId: createWarehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWarehouseRequest"
+            example:
+              name: North Warehouse
+              location: Seattle, WA
+              capacity: 15000
+      responses:
+        "201":
+          description: Warehouse created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /warehouses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/WarehouseId"
+    get:
+      tags: [Warehouses]
+      summary: Get warehouse by ID
+      operationId: getWarehouse
+      responses:
+        "200":
+          description: Warehouse details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Warehouses]
+      summary: Update warehouse
+      operationId: updateWarehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWarehouseRequest"
+      responses:
+        "200":
+          description: Updated warehouse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Warehouses]
+      summary: Delete warehouse
+      operationId: deleteWarehouse
+      responses:
+        "200":
+          description: Warehouse deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: Get inventory levels
+      description: Returns current stock levels across warehouses.
+      operationId: getInventory
+      parameters:
+        - name: warehouse_id
+          in: query
+          description: Filter by warehouse ID
+          schema:
+            type: integer
+            format: uint
+      responses:
+        "200":
+          description: Inventory records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint
+    get:
+      tags: [Inventory]
+      summary: Get inventory for a product
+      description: Returns stock levels for a product across all warehouses.
+      operationId: getProductInventory
+      responses:
+        "200":
+          description: Product inventory records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory/adjust:
+    post:
+      tags: [Inventory]
+      summary: Adjust stock
+      description: |
+        Manually adjust stock for a product in a warehouse.
+        Creates a new inventory record if none exists; otherwise adds to the current quantity.
+        Logs an ADJUST stock movement and audit entry.
+      operationId: adjustInventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustInventoryRequest"
+            example:
+              product_id: 1
+              warehouse_id: 1
+              quantity: 100
+              reason: Initial stock
+      responses:
+        "200":
+          description: Inventory adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /inventory/low-stock:
+    get:
+      tags: [Inventory]
+      summary: Get low-stock items
+      description: Returns items where quantity is at or below minimum stock level.
+      operationId: getLowStock
+      responses:
+        "200":
+          description: Low-stock inventory records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LowStockResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /inventory/movements:
+    get:
+      tags: [Inventory]
+      summary: Get stock movements
+      description: Returns the latest 100 stock movement records.
+      operationId: getStockMovements
+      parameters:
+        - name: product_id
+          in: query
+          description: Filter by product ID
+          schema:
+            type: integer
+            format: uint
+        - name: type
+          in: query
+          description: Movement type filter
+          schema:
+            type: string
+            enum: [IN, OUT, ADJUST]
+      responses:
+        "200":
+          description: Stock movement history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockMovementListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      operationId: listSuppliers
+      responses:
+        "200":
+          description: List of suppliers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Suppliers]
+      summary: Create supplier
+      operationId: createSupplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSupplierRequest"
+            example:
+              name: TechParts Inc
+              contact_name: John Doe
+              email: john@techparts.com
+              phone: "+1-555-0123"
+              address: 123 Supply St, NY
+              rating: 4.5
+      responses:
+        "201":
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /suppliers/{id}:
+    parameters:
+      - $ref: "#/components/parameters/SupplierId"
+    put:
+      tags: [Suppliers]
+      summary: Update supplier
+      operationId: updateSupplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSupplierRequest"
+      responses:
+        "200":
+          description: Updated supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /purchase-orders:
+    get:
+      tags: [Purchase Orders]
+      summary: List purchase orders
+      operationId: listPurchaseOrders
+      parameters:
+        - $ref: "#/components/parameters/StatusQuery"
+      responses:
+        "200":
+          description: List of purchase orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrderListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Purchase Orders]
+      summary: Create purchase order
+      operationId: createPurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePurchaseOrderRequest"
+            example:
+              supplier_id: 1
+              items:
+                - product_id: 1
+                  quantity: 500
+                  unit_price: 15.00
+      responses:
+        "201":
+          description: Purchase order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /purchase-orders/{id}/receive:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseOrderId"
+    put:
+      tags: [Purchase Orders]
+      summary: Receive purchase order
+      description: Marks a purchase order as received and increases warehouse inventory.
+      operationId: receivePurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceivePurchaseOrderRequest"
+            example:
+              warehouse_id: 1
+      responses:
+        "200":
+          description: Purchase order received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceivePurchaseOrderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders:
+    get:
+      tags: [Sales Orders]
+      summary: List sales orders
+      operationId: listOrders
+      parameters:
+        - $ref: "#/components/parameters/StatusQuery"
+      responses:
+        "200":
+          description: List of sales orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Sales Orders]
+      summary: Create sales order
+      description: Creates an order and reduces inventory. Fails if stock is insufficient.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+            example:
+              customer_name: ABC Corp
+              customer_email: orders@abc.com
+              items:
+                - product_id: 1
+                  warehouse_id: 1
+                  quantity: 10
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders/{id}/status:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    put:
+      tags: [Sales Orders]
+      summary: Update order status
+      operationId: updateOrderStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusRequest"
+            example:
+              status: shipped
+      responses:
+        "200":
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /reports/stock-summary:
+    get:
+      tags: [Reports]
+      summary: Get stock summary report
+      description: Returns stock value breakdown by warehouse and product.
+      operationId: getStockSummary
+      responses:
+        "200":
+          description: Stock summary report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockSummaryResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /audit-logs:
+    get:
+      tags: [Reports]
+      summary: Get audit logs
+      description: Returns the latest 100 audit log entries.
+      operationId: getAuditLogs
+      parameters:
+        - name: entity
+          in: query
+          description: Filter by entity type (e.g. Product, Order)
+          schema:
+            type: string
+        - name: action
+          in: query
+          description: Filter by action (e.g. CREATE, UPDATE)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    WarehouseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    SupplierId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    PurchaseOrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: uint
+    CategoryQuery:
+      name: category
+      in: query
+      description: Filter products by category
+      schema:
+        type: string
+    StatusQuery:
+      name: status
+      in: query
+      description: Filter by status
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Invalid request payload
+    NotFound:
+      description: Resource not found
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Product not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Failed to fetch products
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: IMS Backend API v1.0
+
+    MessageResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Product deleted successfully
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        unit:
+          type: string
+          description: Unit of measure (e.g. piece, kg, liter)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required: [name, sku, price]
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        unit:
+          type: string
+
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        unit:
+          type: string
+
+    ProductResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Product"
+
+    ProductListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        manager_id:
+          type: integer
+          format: uint
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateWarehouseRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        manager_id:
+          type: integer
+          format: uint
+
+    UpdateWarehouseRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        manager_id:
+          type: integer
+          format: uint
+
+    WarehouseResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Warehouse"
+
+    WarehouseListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Warehouse"
+
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        product_id:
+          type: integer
+          format: uint
+        warehouse_id:
+          type: integer
+          format: uint
+        quantity:
+          type: integer
+        min_stock:
+          type: integer
+        max_stock:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+        product:
+          $ref: "#/components/schemas/Product"
+        warehouse:
+          $ref: "#/components/schemas/Warehouse"
+
+    AdjustInventoryRequest:
+      type: object
+      required: [product_id, warehouse_id, quantity]
+      properties:
+        product_id:
+          type: integer
+          format: uint
+        warehouse_id:
+          type: integer
+          format: uint
+        quantity:
+          type: integer
+          description: Amount to add (can be negative to reduce stock)
+        reason:
+          type: string
+
+    InventoryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Inventory"
+
+    InventoryListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Inventory"
+
+    LowStockResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Inventory"
+        count:
+          type: integer
+
+    StockMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        product_id:
+          type: integer
+          format: uint
+        warehouse_id:
+          type: integer
+          format: uint
+        type:
+          type: string
+          enum: [IN, OUT, ADJUST]
+        quantity:
+          type: integer
+        reference:
+          type: string
+        reason:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        product:
+          $ref: "#/components/schemas/Product"
+
+    StockMovementListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockMovement"
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        name:
+          type: string
+        contact_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        rating:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateSupplierRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        contact_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        rating:
+          type: number
+          format: double
+
+    UpdateSupplierRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        contact_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        rating:
+          type: number
+          format: double
+
+    SupplierResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Supplier"
+
+    SupplierListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supplier"
+
+    POItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        po_id:
+          type: integer
+          format: uint
+        product_id:
+          type: integer
+          format: uint
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+          format: double
+        product:
+          $ref: "#/components/schemas/Product"
+
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        po_number:
+          type: string
+        supplier_id:
+          type: integer
+          format: uint
+        status:
+          type: string
+          enum: [pending, received, cancelled]
+        total_cost:
+          type: number
+          format: double
+        order_date:
+          type: string
+          format: date-time
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        supplier:
+          $ref: "#/components/schemas/Supplier"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/POItem"
+
+    CreatePurchaseOrderRequest:
+      type: object
+      required: [supplier_id, items]
+      properties:
+        supplier_id:
+          type: integer
+          format: uint
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, quantity, unit_price]
+            properties:
+              product_id:
+                type: integer
+                format: uint
+              quantity:
+                type: integer
+              unit_price:
+                type: number
+                format: double
+
+    ReceivePurchaseOrderRequest:
+      type: object
+      required: [warehouse_id]
+      properties:
+        warehouse_id:
+          type: integer
+          format: uint
+
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/PurchaseOrder"
+
+    PurchaseOrderListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseOrder"
+
+    ReceivePurchaseOrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Purchase order received successfully
+        data:
+          $ref: "#/components/schemas/PurchaseOrder"
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        order_id:
+          type: integer
+          format: uint
+        product_id:
+          type: integer
+          format: uint
+        warehouse_id:
+          type: integer
+          format: uint
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+          format: double
+        product:
+          $ref: "#/components/schemas/Product"
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        order_number:
+          type: string
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+        total_amount:
+          type: number
+          format: double
+        order_date:
+          type: string
+          format: date-time
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+    CreateOrderRequest:
+      type: object
+      required: [customer_name, items]
+      properties:
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, warehouse_id, quantity]
+            properties:
+              product_id:
+                type: integer
+                format: uint
+              warehouse_id:
+                type: integer
+                format: uint
+              quantity:
+                type: integer
+
+    UpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+
+    OrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          $ref: "#/components/schemas/Order"
+
+    OrderListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    StockSummaryItem:
+      type: object
+      properties:
+        warehouse_name:
+          type: string
+        product_name:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        value:
+          type: number
+          format: double
+
+    StockSummaryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/StockSummaryItem"
+            total_value:
+              type: number
+              format: double
+            total_items:
+              type: integer
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+        action:
+          type: string
+        entity:
+          type: string
+        entity_id:
+          type: integer
+          format: uint
+        user_id:
+          type: string
+        details:
+          type: string
+        ip_address:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    AuditLogListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
