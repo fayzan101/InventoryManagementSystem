@@ -164,6 +164,17 @@ type OrderItem struct {
 	UnitPrice   float64 `json:"unit_price"`
 	Product     Product `gorm:"foreignKey:ProductID" json:"product,omitempty"`
 }
+type User struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	Name         string    `gorm:"not null" json:"name"`
+	Email        string    `gorm:"unique;not null" json:"email"`
+	PasswordHash string    `gorm:"not null" json:"-"`
+	Role         string    `gorm:"not null;default:'staff'" json:"role"` // admin, manager, staff
+	IsActive     bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type AuditLog struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Action    string    `gorm:"not null" json:"action"`

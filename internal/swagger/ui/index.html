@@ -29,6 +29,9 @@
           req.headers["Accept"] = "application/json";
           return req;
         },
+        onComplete: function () {
+          console.info("IMS API: POST /auth/login first, then Authorize with Bearer <token>");
+        },
       });
     };
   </script>
